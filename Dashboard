@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard Tracking SPJ</title>
+  <?!= include('Styles'); ?>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+  <h1>📋 DASHBOARD TRACKING SPJ</h1>
+  <div class="header-info">
+    <div class="date-info">
+      <span>Last Update: <span id="lastUpdate">-</span></span>
+    </div>
+    <div class="button-group">
+      <button class="btn-refresh" onclick="refreshData()">🔄 Refresh Data</button>
+      <button class="btn-back" onclick="goToMonitoring()">📋 Dashboard Monitoring Rekon</button>
+    </div>
+  </div>
+</div>
+
+    <!-- Filter Tabs -->
+    <div class="filter-tabs">
+      <div class="tabs">
+        <select id="filterOP" class="tab-select" onchange="applyFilters()">
+          <option value="">ALL OP</option>
+        </select>
+        <select id="filterCustomer" class="tab-select" onchange="applyFilters()">
+          <option value="">ALL Customer</option>
+        </select>
+        <select id="filterProduk" class="tab-select" onchange="applyFilters()">
+          <option value="">ALL Produk</option>
+        </select>
+        <select id="filterTOH" class="tab-select" onchange="applyFilters()">
+          <option value="">ALL TOH/WOH</option>
+        </select>
+      </div>
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="🔍 Search OP / Customer / TOH / Produk / No. SPJ ..." onkeyup="applyFilters()">
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+      <div class="card total-spj">
+        <div class="card-label">Total SPJ</div>
+        <div class="card-value" id="totalSPJ">0</div>
+      </div>
+     <div class="card on-progress">
+  <div class="card-label">Adjustment in Process</div>
+  <div class="card-value" id="countProcess">0</div>
+</div>
+
+<div class="card completed">
+  <div class="card-label">Adjustments Done</div>
+  <div class="card-value" id="countDone">0</div>
+</div>
+
+<div class="card delayed">
+  <div class="card-label">No Adjustments</div>
+  <div class="card-value" id="countNoAdjustment">0</div>
+</div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-container">
+      <table id="dataTable">
+        <thead>
+          <tr id="tableHeader">
+            <!-- Header akan diisi oleh JavaScript -->
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <!-- Data akan diisi oleh JavaScript -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      <div class="pagination-info">
+        <span id="totalRows">0</span> SPJ
+      </div>
+      <div class="pagination-controls">
+        <button onclick="prevPage()" id="prevBtn">◀ Prev</button>
+        <span>Halaman <span id="currentPage">1</span> dari <span id="totalPages">1</span></span>
+        <button onclick="nextPage()" id="nextBtn">Next ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <?!= include('Scripts'); ?>
+</body>
+</html>

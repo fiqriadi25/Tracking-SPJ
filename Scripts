@@ -1,0 +1,237 @@
+<script>
+  let allData = [];
+  let filteredData = [];
+  let currentPage = 1;
+  let rowsPerPage = 15;
+  let tanggalColumns = [];
+  let headers = [];
+
+  window.onload = function() {
+    loadData();
+  };
+
+  function formatLastUpdate(dateStr) {
+    if (!dateStr || dateStr === 'Belum ada update' || dateStr === 'Error baca update') {
+      return dateStr;
+    }
+
+    let date = new Date(dateStr);
+
+    if (isNaN(date.getTime())) {
+      const parts = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})/);
+      if (parts) {
+        const [_, d, m, y, h, min, s] = parts;
+        date = new Date(y, m - 1, d, h, min, s);
+      } else {
+        return dateStr;
+      }
+    }
+
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    const tanggal = date.toLocaleDateString('en-US', options);
+    const waktu = date.toLocaleTimeString('en-US', { hour12: false });
+    return `${tanggal} - ${waktu}`;
+  }
+
+  function loadData() {
+    google.script.run
+      .withSuccessHandler(displayData)
+      .withFailureHandler(showError)
+      .getData();
+  }
+
+  function displayData(result) {
+    if (!result.success) {
+      showError(result.error);
+      return;
+    }
+
+    allData = result.data || [];
+    tanggalColumns = result.tanggalColumns || [];
+    headers = result.headers || [];
+
+    if (result.tanggalUpdate) {
+      document.getElementById('lastUpdate').textContent =
+        formatLastUpdate(result.tanggalUpdate);
+    }
+
+    populateFilters(result.filters);
+    filteredData = [...allData];
+    applyFilters();
+  }
+
+  function populateFilters(filters) {
+    const setOptions = (id, label, arr) => {
+      const el = document.getElementById(id);
+      el.innerHTML = `<option value="">${label}</option>`;
+      (arr || []).forEach(val => {
+        el.innerHTML += `<option value="${val}">${val}</option>`;
+      });
+    };
+
+    setOptions('filterOP', 'Semua OP', filters.kodeOP);
+    setOptions('filterCustomer', 'Semua Customer', filters.customer);
+    setOptions('filterProduk', 'Semua Produk', filters.produk);
+    setOptions('filterTOH', 'Semua TOH/WOH', filters.toh);
+  }
+
+  function applyFilters() {
+    const op = document.getElementById('filterOP').value;
+    const customer = document.getElementById('filterCustomer').value;
+    const produk = document.getElementById('filterProduk').value;
+    const toh = document.getElementById('filterTOH').value;
+    const search = document.getElementById('searchInput').value.toLowerCase();
+
+    filteredData = allData.filter(item => {
+      if (op && item['Kode OP'] !== op) return false;
+      if (customer && item['Customer'] !== customer) return false;
+      if (produk && item['Produk'] !== produk) return false;
+      if (toh && item['Nama TOH/WOH'] !== toh) return false;
+
+      if (search) {
+        const searchable = [
+          item['Kode OP'],
+          item['Nama OP'],
+          item['Customer'],
+          item['Produk'],
+          item['Nama TOH/WOH'],
+          item['SPJ']
+        ].join(' ').toLowerCase();
+
+        if (!searchable.includes(search)) return false;
+      }
+
+      return true;
+    });
+
+    updateSummary();
+    currentPage = 1;
+    renderTable();
+  }
+
+  function updateSummary() {
+    const total = filteredData.length;
+
+    const process = filteredData.filter(item =>
+      (item['Status Adjustment'] || '').toLowerCase() === 'process'
+    ).length;
+
+    const done = filteredData.filter(item =>
+      (item['Status Adjustment'] || '').toLowerCase() === 'done'
+    ).length;
+
+    const noAdjustment = filteredData.filter(item =>
+      (item['Status Adjustment'] || '').toLowerCase() === 'no adjustment'
+    ).length;
+
+    document.getElementById('totalSPJ').textContent = total;
+    document.getElementById('countProcess').textContent = process;
+    document.getElementById('countDone').textContent = done;
+    document.getElementById('countNoAdjustment').textContent = noAdjustment;
+  }
+
+  function renderTable() {
+    const start = (currentPage - 1) * rowsPerPage;
+    const end = Math.min(start + rowsPerPage, filteredData.length);
+    const pageData = filteredData.slice(start, end);
+
+    renderHeader();
+    renderBody(pageData);
+    updatePagination();
+  }
+
+  function renderHeader() {
+    const headerRow = document.getElementById('tableHeader');
+
+    const fixedHeaders = [
+      'Kode OP',
+      'Nama OP',
+      'Customer',
+      'SPJ',
+      'Produk',
+      'Tanggal SLA',
+      'UJP',
+      'Charging',
+      'Status Rekon',
+      'Nama TOH/WOH',
+      'Status Adjustment'
+    ];
+
+    let html = '';
+    fixedHeaders.forEach(h => html += `<th>${h}</th>`);
+    tanggalColumns.forEach(t => html += `<th>${t}</th>`);
+
+    headerRow.innerHTML = html;
+  }
+
+  function renderBody(data) {
+    const tbody = document.getElementById('tableBody');
+    let html = '';
+
+    data.forEach(item => {
+      html += '<tr>';
+
+      html += `<td>${item['Kode OP'] || ''}</td>`;
+      html += `<td>${item['Nama OP'] || ''}</td>`;
+      html += `<td>${item['Customer'] || ''}</td>`;
+      html += `<td>${item['SPJ'] || '-'}</td>`;
+      html += `<td>${item['Produk'] || ''}</td>`;
+      html += `<td>${item['Tanggal SLA'] || ''}</td>`;
+      html += `<td>${item['UJP'] || ''}</td>`;
+      html += `<td>${item['Charging'] || ''}</td>`;
+
+      html += `<td>${item['Status Rekon'] || ''}</td>`;
+      html += `<td>${item['Nama TOH/WOH'] || ''}</td>`;
+
+      const statusAdj = item['Status Adjustment'] || '';
+      html += `<td>${statusAdj}</td>`;
+
+      tanggalColumns.forEach(tanggal => {
+        html += `<td>${item[tanggal] || ''}</td>`;
+      });
+
+      html += '</tr>';
+    });
+
+    tbody.innerHTML = html;
+  }
+
+  function updatePagination() {
+    const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+
+    document.getElementById('totalRows').textContent = filteredData.length;
+    document.getElementById('currentPage').textContent = currentPage;
+    document.getElementById('totalPages').textContent = totalPages || 1;
+
+    document.getElementById('prevBtn').disabled = currentPage === 1;
+    document.getElementById('nextBtn').disabled =
+      currentPage === totalPages || totalPages === 0;
+  }
+
+  function prevPage() {
+    if (currentPage > 1) {
+      currentPage--;
+      renderTable();
+    }
+  }
+
+  function nextPage() {
+    const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+    if (currentPage < totalPages) {
+      currentPage++;
+      renderTable();
+    }
+  }
+
+  function refreshData() {
+    loadData();
+  }
+
+  function goToMonitoring(){
+  window.location.href = "https://script.google.com/a/macros/b-log.co.id/s/AKfycbwkI628xKLAchR69opeYdGp4gdTYmwS45XaTJjN53-bHr2sHj9B8XmnKirgSnlllsDF8A/exec";
+}
+
+  function showError(error) {
+    alert('Error: ' + error);
+  }
+</script>

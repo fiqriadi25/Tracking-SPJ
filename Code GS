@@ -1,0 +1,188 @@
+// ===============================
+// KONFIGURASI
+// ===============================
+const SPREADSHEET_ID = '12FcleafDZHI-OkyxWEfFQM4BXcx2RBNIfG2ShnoptGo';
+const SHEET_DATA = 'Data_Rekon';
+const SHEET_MASTER = 'Master_OP_OH';
+const SHEET_CONFIG = 'Config';
+
+
+// ===============================
+// WEB APP ENTRY
+// ===============================
+function doGet() {
+  return HtmlService.createTemplateFromFile('Dashboard')
+    .evaluate()
+    .setTitle('Tracking SPJ - Dashboard')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+
+// ===============================
+// AMBIL DATA UTAMA
+// ===============================
+function getData() {
+  try {
+
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const dataSheet = ss.getSheetByName(SHEET_DATA);
+    if (!dataSheet) throw new Error(`Sheet "${SHEET_DATA}" tidak ditemukan.`);
+
+    const dataRows = dataSheet.getDataRange().getValues();
+
+    if (dataRows.length < 2) {
+      return {
+        success: true,
+        data: [],
+        filters: { kodeOP: [], customer: [], produk: [], toh: [] },
+        tanggalColumns: [],
+        headers: dataRows[0] || [],
+        tanggalUpdate: getTanggalUpdate(ss)
+      };
+    }
+
+    // ===== HEADER (AUTO TRIM) =====
+    const headers = dataRows[0].map(h => String(h).trim());
+    const data = [];
+
+    // ===== CONVERT ROW KE OBJECT =====
+    for (let i = 1; i < dataRows.length; i++) {
+      const row = dataRows[i];
+      const rowData = {};
+
+      headers.forEach((header, index) => {
+        rowData[header] = row[index];
+      });
+
+      // ===== NORMALISASI STATUS ADJUSTMENT =====
+      let statusAdj = String(rowData["Status Adjustment"] || "").trim();
+
+      if (statusAdj.toLowerCase() === "reject") {
+        statusAdj = "No Adjustment";
+      }
+
+      rowData["Status Adjustment"] = statusAdj;
+
+      data.push(rowData);
+    }
+
+    // ===============================
+    // IDENTIFIKASI KOLOM TANGGAL
+    // ===============================
+    const FIXED_COLUMNS = [
+      "Kode OP",
+      "Nama OP",
+      "Customer",
+      "SPJ",
+      "Produk",
+      "Tanggal SLA",
+      "UJP",
+      "Charging",
+      "Status Rekon",
+      "Nama TOH/WOH",
+      "Status Adjustment"
+    ];
+
+    const tanggalColumns = headers.filter(h => !FIXED_COLUMNS.includes(h));
+
+
+    // ===============================
+    // LOOKUP MASTER OP OH
+    // ===============================
+    const masterSheet = ss.getSheetByName(SHEET_MASTER);
+
+    if (masterSheet) {
+
+      const masterRows = masterSheet.getDataRange().getValues();
+
+      if (masterRows.length > 1) {
+
+        const masterHeaders = masterRows[0].map(h => String(h).trim());
+        const lookup = {};
+
+        for (let i = 1; i < masterRows.length; i++) {
+          const row = masterRows[i];
+          const rowData = {};
+
+          masterHeaders.forEach((header, index) => {
+            rowData[header] = row[index];
+          });
+
+          const key = `${String(rowData['Kode OP'] || '').trim()}|${String(rowData['Nama OP'] || '').trim()}|${String(rowData['Customer'] || '').trim()}`.toLowerCase();
+
+          const nama = rowData['Nama TOH/WOH'] ||
+                       rowData['TOH'] ||
+                       rowData['Nama TOH'] ||
+                       '';
+
+          lookup[key] = nama;
+        }
+
+        data.forEach(item => {
+          const key = `${String(item['Kode OP'] || '').trim()}|${String(item['Nama OP'] || '').trim()}|${String(item['Customer'] || '').trim()}`.toLowerCase();
+          if (lookup[key]) {
+            item['Nama TOH/WOH'] = lookup[key];
+          }
+        });
+      }
+    }
+
+
+    // ===============================
+    // UNIQUE FILTER VALUES
+    // ===============================
+    const uniqueOP = [...new Set(data.map(d => d['Kode OP']).filter(Boolean))];
+    const uniqueCustomer = [...new Set(data.map(d => d['Customer']).filter(Boolean))];
+    const uniqueProduk = [...new Set(data.map(d => d['Produk']).filter(Boolean))];
+    const uniqueTOH = [...new Set(data.map(d => d['Nama TOH/WOH']).filter(Boolean))];
+
+    const tanggalUpdate = getTanggalUpdate(ss);
+
+    return {
+      success: true,
+      data: data,
+      filters: {
+        kodeOP: uniqueOP,
+        customer: uniqueCustomer,
+        produk: uniqueProduk,
+        toh: uniqueTOH
+      },
+      tanggalColumns: tanggalColumns,
+      headers: headers,
+      tanggalUpdate: tanggalUpdate
+    };
+
+  } catch (error) {
+    console.error(error);
+    return {
+      success: false,
+      error: error.toString()
+    };
+  }
+}
+
+
+// ===============================
+// TANGGAL UPDATE
+// ===============================
+function getTanggalUpdate(ss) {
+  try {
+    const configSheet = ss.getSheetByName(SHEET_CONFIG);
+    if (!configSheet) return 'Belum ada update';
+
+    const val = configSheet.getRange('A1').getValue();
+    return val || 'Belum ada update';
+
+  } catch (e) {
+    return 'Error baca update';
+  }
+}
+
+
+// ===============================
+// INCLUDE HTML (WAJIB ADA)
+// ===============================
+function include(filename) {
+  return HtmlService.createHtmlOutputFromFile(filename).getContent();
+}
