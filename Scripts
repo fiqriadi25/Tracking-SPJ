@@ -69,10 +69,11 @@
       });
     };
 
-    setOptions('filterOP', 'Semua OP', filters.kodeOP);
-    setOptions('filterCustomer', 'Semua Customer', filters.customer);
-    setOptions('filterProduk', 'Semua Produk', filters.produk);
-    setOptions('filterTOH', 'Semua TOH/WOH', filters.toh);
+    setOptions('filterOP', 'ALL OP', filters.kodeOP);
+    setOptions('filterCustomer', 'ALL Customer', filters.customer);
+    setOptions('filterProduk', 'ALL Produk', filters.produk);
+    setOptions('filterTOH', 'ALL TOH/WOH', filters.toh);
+    setOptions('filterAdjusment', 'ALL Adjusment', filters.adjustment);
   }
 
   function applyFilters() {
@@ -80,6 +81,7 @@
     const customer = document.getElementById('filterCustomer').value;
     const produk = document.getElementById('filterProduk').value;
     const toh = document.getElementById('filterTOH').value;
+    const adjustment = document.getElementById('filterAdjusment').value;
     const search = document.getElementById('searchInput').value.toLowerCase();
 
     filteredData = allData.filter(item => {
@@ -87,6 +89,7 @@
       if (customer && item['Customer'] !== customer) return false;
       if (produk && item['Produk'] !== produk) return false;
       if (toh && item['Nama TOH/WOH'] !== toh) return false;
+      if (adjustment && item['Status Adjustment'] !== adjustment) return false;
 
       if (search) {
         const searchable = [
@@ -95,6 +98,7 @@
           item['Customer'],
           item['Produk'],
           item['Nama TOH/WOH'],
+          item['Status Adjustment'],
           item['SPJ']
         ].join(' ').toLowerCase();
 
