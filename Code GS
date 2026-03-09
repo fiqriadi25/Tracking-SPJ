@@ -136,22 +136,26 @@ function getData() {
     const uniqueCustomer = [...new Set(data.map(d => d['Customer']).filter(Boolean))];
     const uniqueProduk = [...new Set(data.map(d => d['Produk']).filter(Boolean))];
     const uniqueTOH = [...new Set(data.map(d => d['Nama TOH/WOH']).filter(Boolean))];
+    const uniqueAdjustment = [
+  ...new Set(data.map(d => d['Status Adjustment']).filter(Boolean))
+];
 
     const tanggalUpdate = getTanggalUpdate(ss);
 
     return {
-      success: true,
-      data: data,
-      filters: {
-        kodeOP: uniqueOP,
-        customer: uniqueCustomer,
-        produk: uniqueProduk,
-        toh: uniqueTOH
-      },
-      tanggalColumns: tanggalColumns,
-      headers: headers,
-      tanggalUpdate: tanggalUpdate
-    };
+  success: true,
+  data: data,
+  filters: {
+    kodeOP: uniqueOP,
+    customer: uniqueCustomer,
+    produk: uniqueProduk,
+    toh: uniqueTOH,
+    adjustment: uniqueAdjustment   // ⬅ TAMBAH INI
+  },
+  tanggalColumns: tanggalColumns,
+  headers: headers,
+  tanggalUpdate: tanggalUpdate
+};
 
   } catch (error) {
     console.error(error);
