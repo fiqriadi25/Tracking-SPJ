@@ -23,27 +23,42 @@
   </div>
 </div>
 
-    <!-- Filter Tabs -->
+     <!-- Filter Tabs -->
     <div class="filter-tabs">
       <div class="tabs">
+        
         <select id="filterOP" class="tab-select" onchange="applyFilters()">
           <option value="">ALL OP</option>
         </select>
+
         <select id="filterCustomer" class="tab-select" onchange="applyFilters()">
           <option value="">ALL Customer</option>
         </select>
+
         <select id="filterProduk" class="tab-select" onchange="applyFilters()">
           <option value="">ALL Produk</option>
         </select>
+
         <select id="filterTOH" class="tab-select" onchange="applyFilters()">
           <option value="">ALL TOH/WOH</option>
         </select>
+
+        <select id="filterAdjusment" class="tab-select" onchange="applyFilters()">
+          <option value="">ALL Adjustment</option>
+        </select>
+
       </div>
+
       <div class="search-box">
-        <input type="text" id="searchInput" placeholder="🔍 Search OP / Customer / TOH / Produk / No. SPJ ..." onkeyup="applyFilters()">
+        <input 
+          type="text" 
+          id="searchInput" 
+          placeholder="🔍 Search OP / Customer / TOH / Produk / No. SPJ ..." 
+          onkeyup="applyFilters()">
       </div>
     </div>
 
+    
     <!-- Summary Cards -->
     <div class="summary-cards">
       <div class="card total-spj">
@@ -67,18 +82,20 @@
     </div>
 
     <!-- Table -->
-    <div class="table-container">
-      <table id="dataTable">
-        <thead>
-          <tr id="tableHeader">
-            <!-- Header akan diisi oleh JavaScript -->
-          </tr>
-        </thead>
-        <tbody id="tableBody">
-          <!-- Data akan diisi oleh JavaScript -->
-        </tbody>
-      </table>
-    </div>
+<div class="table-container">
+  <div class="table-wrapper">
+    <table id="dataTable">
+      <thead>
+        <tr id="tableHeader">
+          <!-- Header akan diisi oleh JavaScript -->
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <!-- Data akan diisi oleh JavaScript -->
+      </tbody>
+    </table>
+  </div>
+</div>
 
     <!-- Pagination -->
     <div class="pagination">
